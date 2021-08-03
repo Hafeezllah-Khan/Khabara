@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "710263696709",
+    "project_id": "khabara-caa03",
+    "storage_bucket": "khabara-caa03.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:710263696709:android:020388e3adf60b13a1622c",
+        "android_client_info": {
+          "package_name": "com.example.khabrav1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "710263696709-v80qg2f61ags9v4e1ss1c4jv9npo5645.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOxZ1HqN2IBln88R9uA7tny4sGDK_e_7Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "710263696709-v80qg2f61ags9v4e1ss1c4jv9npo5645.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
