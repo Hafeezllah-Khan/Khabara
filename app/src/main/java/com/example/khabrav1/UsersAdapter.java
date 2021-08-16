@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 
 import com.bumptech.glide.Glide;
 
-import android.support.annotation.NonNull;
+
 
 //import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -61,7 +61,6 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UsersViewHol
                         if(snapshot.exists()) {
                             String lastMsg = snapshot.child("lastMsg").getValue(String.class);
                             long time = snapshot.child("lastMsgTime").getValue(Long.class);
-
                             holder.binding.lastMsg.setText(lastMsg);
                         }else {
                             holder.binding.lastMsg.setText("Tap to chat");
@@ -103,7 +102,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UsersViewHol
 
         RowConversationBinding binding;
 
-        public UsersViewHolder(@NonNull  View itemView) {
+        public UsersViewHolder(  View itemView) {
             super(itemView);
             binding = RowConversationBinding.bind(itemView);
         }

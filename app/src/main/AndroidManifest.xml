@@ -10,11 +10,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Khabrav1"
         android:usesCleartextTraffic="true">
+
         <activity android:name=".ChatActivity"></activity>// android:windowSoftInputMode="adjustPan"
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MainActivity"
+            android:windowSoftInputMode="stateAlwaysHidden"/>
         <activity android:name=".SetupProfileActivity" />
-        <activity android:name=".OTPActivity" />
-        <activity android:name=".PhoneNumberActivity">
+        <activity android:name=".OTPActivity"
+            android:windowSoftInputMode="stateVisible"/>
+        <activity android:name=".PhoneNumberActivity"
+            android:windowSoftInputMode="stateVisible">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

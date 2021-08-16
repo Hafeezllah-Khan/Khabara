@@ -3,8 +3,11 @@ package com.example.khabrav1;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import com.example.khabrav1.databinding.ActivityOtpactivityBinding;
@@ -27,11 +30,18 @@ public class OTPActivity extends AppCompatActivity {
 
     String verificationId;
 
+    ProgressDialog dialog;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityOtpactivityBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        dialog = new ProgressDialog(this);
+        dialog.setMessage("Sending OTP...");
+        dialog.setCancelable(false);
+        dialog.show();
 
         auth = FirebaseAuth.getInstance();
 
@@ -58,7 +68,12 @@ public class OTPActivity extends AppCompatActivity {
                     public void onCodeSent(@NonNull  String verifyId, @NonNull  PhoneAuthProvider.ForceResendingToken forceResendingToken) {
                         super.onCodeSent(verifyId, forceResendingToken);
 
+                        dialog.dismiss();
                         verificationId = verifyId;
+
+                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+                        binding.otpView.requestFocus();
                     }
                 }).build();
 

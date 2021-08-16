@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -28,6 +29,7 @@ public class SetupProfileActivity extends AppCompatActivity {
     FirebaseDatabase database;
     FirebaseStorage storage;
     Uri selectedImage;
+    ProgressDialog dialog;
 
 
     @Override
@@ -39,6 +41,12 @@ public class SetupProfileActivity extends AppCompatActivity {
         database = FirebaseDatabase.getInstance();
         storage = FirebaseStorage.getInstance();
         auth = FirebaseAuth.getInstance();
+
+        dialog = new ProgressDialog(this);
+        dialog.setMessage("Uploading profile...");
+        dialog.setCancelable(false);
+
+        getSupportActionBar().hide();
 
         binding.imageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,6 +68,7 @@ public class SetupProfileActivity extends AppCompatActivity {
                     return;
                 }
 
+                dialog.show();
                 if(selectedImage != null){
                     StorageReference reference = storage.getReference().child("Profiles").child(auth.getUid());
                     reference.putFile(selectedImage).addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
@@ -70,7 +79,6 @@ public class SetupProfileActivity extends AppCompatActivity {
                                     @Override
                                     public void onSuccess(Uri uri) {
                                         String imageUrl = uri.toString();
-
                                         String uid = auth.getUid();
                                         String phone = auth.getCurrentUser().getPhoneNumber();
                                         String name = binding.nameBox.getText().toString();
@@ -84,6 +92,7 @@ public class SetupProfileActivity extends AppCompatActivity {
                                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                                     @Override
                                                     public void onSuccess(Void unused) {
+                                                        dialog.dismiss();
                                                         Intent intent = new Intent(SetupProfileActivity.this, MainActivity.class);
                                                         startActivity(intent);
                                                         finish();
@@ -109,6 +118,7 @@ public class SetupProfileActivity extends AppCompatActivity {
                             .addOnSuccessListener(new OnSuccessListener<Void>() {
                                 @Override
                                 public void onSuccess(Void unused) {
+                                    dialog.dismiss();
                                     Intent intent = new Intent(SetupProfileActivity.this, MainActivity.class);
                                     startActivity(intent);
                                     finish();

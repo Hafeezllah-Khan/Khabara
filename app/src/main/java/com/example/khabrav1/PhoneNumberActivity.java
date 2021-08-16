@@ -21,6 +21,9 @@ public class PhoneNumberActivity extends AppCompatActivity {
         binding = ActivityPhoneNumberBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        binding.phoneBox.requestFocus();
+        //getSupportActionBar().hide();
+
         auth = FirebaseAuth.getInstance();
 
         if(auth.getCurrentUser() != null){

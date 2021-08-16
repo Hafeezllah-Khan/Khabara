@@ -96,7 +96,6 @@ public class ChatActivity extends AppCompatActivity {
                 database.getReference().child("chats")
                         .child(senderRoom)
                         .child("messages")
-                        //.push()
                         .child(randomKey)
                         .setValue(message).addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -104,7 +103,6 @@ public class ChatActivity extends AppCompatActivity {
                         database.getReference().child("chats")
                                 .child(receiverRoom)
                                 .child("messages")
-                                //.push()
                                 .child(randomKey)
                                 .setValue(message).addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
@@ -120,5 +118,12 @@ public class ChatActivity extends AppCompatActivity {
         });
 
         getSupportActionBar().setTitle(name);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return super.onSupportNavigateUp();
     }
 }
