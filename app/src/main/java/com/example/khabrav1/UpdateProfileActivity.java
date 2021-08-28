@@ -3,42 +3,45 @@ package com.example.khabrav1;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 
-import com.example.khabrav1.databinding.ActivitySetupProfileBinding;
+import com.example.khabrav1.databinding.ActivityUpdateProfileBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import org.jetbrains.annotations.NotNull;
 
-public class SetupProfileActivity extends AppCompatActivity {
+public class UpdateProfileActivity extends AppCompatActivity {
 
-    ActivitySetupProfileBinding binding;
+
+    ActivityUpdateProfileBinding binding;
     FirebaseAuth auth;
     FirebaseDatabase database;
     FirebaseStorage storage;
     Uri selectedImage;
     ProgressDialog dialog;
-
-    public static final int REQUEST_READ_CONTACTS = 79;
+    User user;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivitySetupProfileBinding.inflate(getLayoutInflater());
+        binding = ActivityUpdateProfileBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         database = FirebaseDatabase.getInstance();
@@ -49,8 +52,30 @@ public class SetupProfileActivity extends AppCompatActivity {
         dialog.setMessage("Uploading profile...");
         dialog.setCancelable(false);
 
-        getSupportActionBar().hide();
-        requestPermission();
+        //getSupportActionBar().hide();
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+
+        getSupportActionBar().setTitle("Update profile");
+
+        database.getReference().child("users").child(FirebaseAuth.getInstance().getUid())
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull @NotNull DataSnapshot snapshot) {
+                        user = snapshot.getValue(User.class);
+                        binding.nameBox.setText(user.getName());
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull @NotNull DatabaseError error) {
+
+                    }
+                });
+
+
+
+
+
 
         binding.imageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,6 +86,13 @@ public class SetupProfileActivity extends AppCompatActivity {
                 startActivityForResult(intent,45);
             }
         });
+
+
+
+        //String id = auth.getCurrentUser().toString();
+        //Task<DataSnapshot> us = database.getReference().child("users").child(id).get();
+        //us.toString();
+
 
         binding.continueBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -77,7 +109,7 @@ public class SetupProfileActivity extends AppCompatActivity {
                     StorageReference reference = storage.getReference().child("Profiles").child(auth.getUid());
                     reference.putFile(selectedImage).addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
                         @Override
-                        public void onComplete(@NonNull  Task<UploadTask.TaskSnapshot> task) {
+                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
                             if(task.isSuccessful()){
                                 reference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                                     @Override
@@ -85,6 +117,7 @@ public class SetupProfileActivity extends AppCompatActivity {
                                         String imageUrl = uri.toString();
                                         String uid = auth.getUid();
                                         String phone = auth.getCurrentUser().getPhoneNumber();
+
                                         String name = binding.nameBox.getText().toString();
 
                                         User user = new User(uid,name,phone,imageUrl);
@@ -97,7 +130,7 @@ public class SetupProfileActivity extends AppCompatActivity {
                                                     @Override
                                                     public void onSuccess(Void unused) {
                                                         dialog.dismiss();
-                                                        Intent intent = new Intent(SetupProfileActivity.this, MainActivity.class);
+                                                        Intent intent = new Intent(UpdateProfileActivity.this, MainActivity.class);
                                                         startActivity(intent);
                                                         finish();
                                                     }
@@ -123,7 +156,7 @@ public class SetupProfileActivity extends AppCompatActivity {
                                 @Override
                                 public void onSuccess(Void unused) {
                                     dialog.dismiss();
-                                    Intent intent = new Intent(SetupProfileActivity.this, MainActivity.class);
+                                    Intent intent = new Intent(UpdateProfileActivity.this, MainActivity.class);
                                     startActivity(intent);
                                     finish();
                                 }
@@ -134,7 +167,7 @@ public class SetupProfileActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable  Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if(data != null){
@@ -144,19 +177,4 @@ public class SetupProfileActivity extends AppCompatActivity {
             }
         }
     }
-
-    private void requestPermission() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_CONTACTS)) {
-            // show UI part if you want here to show some rationale !!!
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_CONTACTS},
-                    REQUEST_READ_CONTACTS);
-        }
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_CONTACTS)) {
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_CONTACTS},
-                    REQUEST_READ_CONTACTS);
-        }
-    }
-
 }
