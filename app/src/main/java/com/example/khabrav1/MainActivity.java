@@ -3,12 +3,18 @@ package com.example.khabrav1;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -19,10 +25,12 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -41,8 +49,13 @@ public class MainActivity extends AppCompatActivity {
     UsersAdapter usersAdapter;
     TopStatusAdapter statusAdapter;
     ArrayList<UserStatus> userStatuses;
+    FirebaseAuth auth;
+
+    public static final int REQUEST_READ_CONTACTS = 79;
+    private ArrayList mobileArray;
 
     User user;
+    FirebaseUser mUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +66,11 @@ public class MainActivity extends AppCompatActivity {
         database = FirebaseDatabase.getInstance();
         users = new ArrayList<>();
         userStatuses = new ArrayList<>();
+
+        auth = FirebaseAuth.getInstance();
+        mUser = auth.getCurrentUser();
+
+        FirebaseMessaging.getInstance().subscribeToTopic(mUser.getUid());
 
         database.getReference().child("users").child(FirebaseAuth.getInstance().getUid())
                 .addValueEventListener(new ValueEventListener() {
@@ -81,7 +99,17 @@ public class MainActivity extends AppCompatActivity {
         binding.recyclerView.showShimmerAdapter();
         binding.statusList.showShimmerAdapter();
 
-        database.getReference().child("users").addValueEventListener(new ValueEventListener() {
+        if (database!=null){
+            getContactFromPhone(); // If they using this app
+            // getContactList();
+        }
+
+        if (mobileArray!=null) {
+            getContactList();
+
+        }
+
+        /*database.getReference().child("users").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull  DataSnapshot snapshot) {
                 users.clear();
@@ -99,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
             public void onCancelled(@NonNull  DatabaseError error) {
 
             }
-        });
+        });*/
 
         database.getReference().child("stories").addValueEventListener(new ValueEventListener() {
             @Override
@@ -119,11 +147,11 @@ public class MainActivity extends AppCompatActivity {
                             statuses.add(sampleStatus);
                         }
 
-                        status.setStatuses(statuses);//
-
+                        status.setStatuses(statuses);
                         userStatuses.add(status);
                     }
                     binding.statusList.hideShimmerAdapter();
+                    statusAdapter.notifyDataSetChanged();
                 }
             }
 
@@ -147,6 +175,165 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+    }
+
+    private void getContactFromPhone() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_CONTACTS)
+                == PackageManager.PERMISSION_GRANTED) {
+            mobileArray = getAllPhoneContacts();
+        } else {
+            requestPermission();
+        }
+
+    }
+
+    private void requestPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_CONTACTS)) {
+            // show UI part if you want here to show some rationale !!!
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_CONTACTS},
+                    REQUEST_READ_CONTACTS);
+        }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.READ_CONTACTS)) {
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_CONTACTS},
+                    REQUEST_READ_CONTACTS);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case REQUEST_READ_CONTACTS: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    mobileArray = getAllPhoneContacts();
+                } else {
+                    finish();
+                }
+                return;
+            }
+        }
+    }
+    private ArrayList getAllPhoneContacts() {
+        //String ISOPrefix = getCountryISO();
+
+        ArrayList<String> phoneList = new ArrayList<>();
+        ContentResolver cr = getContentResolver();
+        Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
+        if ((cur != null ? cur.getCount() : 0) > 0) {
+            while (cur.moveToNext()) {
+                String id = cur.getString(
+                        cur.getColumnIndex(ContactsContract.Contacts._ID));
+//                String name = cur.getString(cur.getColumnIndex(
+//                        ContactsContract.Contacts.DISPLAY_NAME));
+//                nameList.add(name);
+
+                if (cur.getInt(cur.getColumnIndex( ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
+                    Cursor pCur = cr.query(
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                            new String[]{id}, null);
+                    while (pCur.moveToNext()) {
+                        String phoneNo = pCur.getString(pCur.getColumnIndex(
+                                ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        phoneNo.replace(" ","");
+//                        if(!String.valueOf(phoneNo.charAt(0)).equals("+"))
+//                            phoneNo = ISOPrefix + phoneNo;
+                        phoneList.add(phoneNo);
+                    }
+                    pCur.close();
+                }
+            }
+        }
+        if (cur != null) {
+            cur.close();
+        }
+        return phoneList;
+    }
+
+    private void getContactList() {
+        database.getReference().child("users").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull  DataSnapshot snapshot) {
+                users.clear();
+          /*      for (User ii: users) {
+                    Log.i(TAG, ii.getPhoneNumber());
+                    Log.i(TAG, "xxxxxxxxxxxxxxxxxxxxxxx");
+                }*/
+                for(DataSnapshot snapshot1 : snapshot.getChildren()){
+                    User user = snapshot1.getValue(User.class);
+                    if(!user.getUid().equals(FirebaseAuth.getInstance().getUid())){
+                        if (mobileArray.contains(user.getPhoneNumber())){
+                            users.add(user);
+     /*                       for (User ii: users) {
+                                Log.i(TAG, ii.getPhoneNumber());
+                                Log.i(TAG, "yyyyyyyyyyyyyy");
+                            }*/
+                        }
+                    }
+                    //users.add(user);
+                }
+                binding.recyclerView.hideShimmerAdapter();
+                usersAdapter.notifyDataSetChanged();
+
+/*                for (User ii: users) {
+                    Log.i(TAG, ii.getPhoneNumber());
+                    Log.i(TAG, "zzzzzzzzzzzzzz");
+                }*/
+                //adapter = new ContactsAdapter(users,ContactsActivity.this);
+                //binding.recyclerView.setAdapter(adapter);
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull  DatabaseError error) {
+
+            }
+        });
+
+/*        firestore.collection("Users").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+
+                for (QueryDocumentSnapshot snapshots : queryDocumentSnapshots){
+                    String userID = snapshots.getString("userID");
+                    String userName = snapshots.getString("userName");
+                    String imageUrl = snapshots.getString("imageProfile");
+                    String desc = snapshots.getString("bio");
+                    String phone = snapshots.getString("userPhone");
+
+                    Users user = new Users();
+                    user.setUserID(userID);
+                    user.setBio(desc);
+                    user.setUserName(userName);
+                    user.setImageProfile(imageUrl);
+                    user.setUserPhone(phone);
+
+                    if (userID != null && !userID.equals(firebaseUser.getUid())) {
+                        if (mobileArray.contains(user.getUserPhone())){
+                            list.add(user);
+                        }
+                    }
+                }
+
+
+//                for (Users user : list){
+//                    if (mobileArray.contains(user.getUserPhone())){
+//                        Log.d(TAG, "getContactList: true "+user.getUserPhone() );
+//                    } else {
+//                        Log.d(TAG, "getContactList: false"+user.getUserPhone());
+//                    }
+//                }
+
+                adapter = new ContactsAdapter(list,ContactsActivity.this);
+                binding.recyclerView.setAdapter(adapter);
+            }
+
+        });*/
+
     }
 
     @Override
@@ -197,16 +384,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        String currentId = FirebaseAuth.getInstance().getUid();
+        database.getReference().child("presence").child(currentId).setValue("Online");
+    }
+
+    @Override
+    protected void onPause() {
+        String currentId = FirebaseAuth.getInstance().getUid();
+        database.getReference().child("presence").child(currentId).setValue("Offline");
+        super.onPause();
+    }
+
+    @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()){
             case R.id.search:
                 Toast.makeText(this, "Search", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.settings:
-                Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(MainActivity.this, UpdateProfileActivity.class);
+                startActivity(intent);
+                //Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.groups:
-                Toast.makeText(this, "Groups", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this, "Groups", Toast.LENGTH_SHORT).show();
+            /*    auth.signOut();
+                Intent iintent = new Intent(MainActivity.this, PhoneNumberActivity.class);
+                iintent.putExtra("name", "1");
+                startActivity(iintent);*/
                 break;
         }
         return super.onOptionsItemSelected(item);

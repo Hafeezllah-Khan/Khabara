@@ -1,9 +1,9 @@
 package com.example.khabrav1;
 
 public class Message {
-    private String messageId, message, senderId;
+    private String messageId, message, senderId, imageUrl;
     private long timestamp;
-    private int feeling = -1;
+    private int feeling = 2;
 
 
     public Message() {
@@ -54,5 +54,13 @@ public class Message {
 
     public void setFeeling(int feeling) {
         this.feeling = feeling;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
